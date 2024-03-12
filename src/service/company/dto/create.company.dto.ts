@@ -42,6 +42,9 @@ export class CreateCompanyDto {
     @ApiProperty({ enum: ContactType, nullable : true })
     contact_type: ContactType;
 
+    @ApiProperty({ enum: ContactMethod, nullable : true })
+    contact_method: ContactMethod;
+
     @ApiProperty({ nullable : true })
     last_contact: Date; 
 

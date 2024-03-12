@@ -2,7 +2,7 @@ import { Injectable, Inject, forwardRef } from '@nestjs/common';
 import { ILike, Like, Repository } from 'typeorm';
 import { Company } from './entities/company.entity';
 import { Timestamp } from 'typeorm';
-import { UUID } from 'crypto';
+import { UUID, randomUUID } from 'crypto';
 import { Contact } from '../contact/entities/contact.entity';
 import { ContactService } from '../contact/contact.service';
 import { updateContactDto } from '../contact/dto/update.contact.dto';
@@ -30,6 +30,7 @@ export class CompanyService {
   async create(createCompanyDTO: CreateCompanyDto): Promise<Company> {
     try {
       const company = new Company();
+      company.uuid = randomUUID();
       company.companyName = createCompanyDTO.company_name;
       company.description = createCompanyDTO.description;
       company.email = createCompanyDTO.email;
@@ -42,6 +43,7 @@ export class CompanyService {
       company.city = createCompanyDTO.city;
       company.province = createCompanyDTO.province;
       company.country = createCompanyDTO.country;
+      company.contactMethod = createCompanyDTO.contact_method;
       company.contactType = createCompanyDTO.contact_type;
       company.lastContact = createCompanyDTO.last_contact;
       company.contacts = [];
@@ -99,7 +101,7 @@ export class CompanyService {
       const updateParentDto = new UpdateCompanyDto();
       updateParentDto.sub_entities = subEntities.map((entity) => entity.uuid)
       
-      company =  await this.update(company.uuid, updateParentDto);
+      company =  await this.update(parentEntity.uuid, updateParentDto);
       return parentEntity;
     }
   }
