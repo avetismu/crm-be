@@ -1,8 +1,10 @@
-import { Body, Controller, Get, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common';
 import { ContactService } from './contact.service';
-import { Contact } from './contact.entity';
+import { Contact } from './entities/contact.entity';
 import { API_VERSION } from 'src/utils/app.constants.utils';
-import { CreateContactDTO } from './dto/create.contact.dto';
+import { CreateContactDto } from './dto/create.contact.dto';
+import { updateContactDto } from './dto/update.contact.dto';
+import { UUID } from "crypto";
 
 const CONTACTS_PATH = 'contacts';
 
@@ -10,15 +12,29 @@ const CONTACTS_PATH = 'contacts';
 export class ContactsController {
   constructor(private readonly contactService: ContactService) {}
 
-  
+  @Post('create')
+  create(@Body() createContactDTO : CreateContactDto): Promise<Contact> {
+    return this.contactService.create(createContactDTO);
+  }
 
   @Get('all')
-  getAll(): Promise<Contact[]> {
+  findAll(): Promise<Contact[]> {
     return this.contactService.findAll();
   }
 
-  @Post('create')
-  create(@Body() createContactDTO : CreateContactDTO): Promise<Contact> {
-    return this.contactService.create(createContactDTO);
+  @Get(':uuid')
+  findOne(@Param('uuid') uuid: UUID) {
+    return this.contactService.findOne(uuid);
   }
+
+  @Patch(':uuid')
+  update(@Param('uuid') uuid: UUID, @Body() updateContactDTO: updateContactDto) {
+    return this.contactService.update(uuid, updateContactDTO);
+  }
+
+  @Delete(':uuid')
+  remove(@Param('uuid') uuid: UUID) {
+    return this.contactService.remove(uuid);
+  }
+
 }

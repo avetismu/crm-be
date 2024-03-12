@@ -1,9 +1,12 @@
-import { Injectable, Inject } from '@nestjs/common';
-import { Repository, Timestamp } from 'typeorm';
-import { Contact } from './contact.entity';
-import { CreateContactDTO } from './dto/create.contact.dto';
+import { Injectable, Inject, forwardRef } from '@nestjs/common';
+import { FindOperator, Repository, Timestamp } from 'typeorm';
+import { Contact } from './entities/contact.entity';
+import { CreateContactDto } from './dto/create.contact.dto';
 import { UUID, randomUUID } from 'crypto';
 import CompanyService from '../company/company.service';
+import { CreateCompanyDto } from '../company/dto/create.company.dto';
+import { Company } from '../company/entities/company.entity';
+import { UpdateCompanyDto } from '../company/dto/update.company.entity';
 @Injectable()
 /**
  * Service class for managing contacts.
@@ -12,7 +15,7 @@ export class ContactService {
   constructor(
     @Inject('CONTACT_REPOSITORY')
     private contactRepository: Repository<Contact>,
-
+    @Inject(forwardRef(() => CompanyService))
     private readonly companyService: CompanyService
   ) {}
 
@@ -21,7 +24,7 @@ export class ContactService {
    * @returns A promise that resolves to an array of contacts.
    */
   async findAll(): Promise<Contact[]> {
-    return this.contactRepository.find();
+    return this.contactRepository.find({relations: ['company']});
   }
 
   /**
@@ -29,7 +32,7 @@ export class ContactService {
    * @param createContactDTO - The data for creating a contact.
    * @returns A promise that resolves to the created contact.
    */
-  async create(createContactDTO: CreateContactDTO): Promise<Contact> {
+  async create(createContactDTO: CreateContactDto): Promise<Contact> {
     try {
       const contact = new Contact();
       contact.uuid = randomUUID();
@@ -46,15 +49,13 @@ export class ContactService {
       contact.city = createContactDTO.city;
       contact.province = createContactDTO.province;
       contact.country = createContactDTO.country;
-      contact.contact_type = createContactDTO.contact_type;
+      contact.contactType = createContactDTO.contact_type;
       contact.lastContact = createContactDTO.last_contact;
       contact.contactMethod = createContactDTO.contact_method;
       contact.createdAt = new Date();
 
-      // Assign Company
-      if (createContactDTO.company) {
-        contact.company = await this.companyService.findOne(createContactDTO.company);
-      }
+      await this.addContactToCompany(createContactDTO.company, contact);
+      contact.company = await this.companyService.findOne(createContactDTO.company);
 
       return await this.contactRepository.save(contact);
 
@@ -63,4 +64,63 @@ export class ContactService {
       throw err;
     }
   }
+
+  /**
+    * Retrieves a contact by its UUID.
+    * @param uuid - The UUID of the contact.
+    * @returns A promise that resolves to the found contact, or undefined if not found.
+    */
+    async findOne(uuid: UUID): Promise<Contact | undefined> {
+     return this.contactRepository.findOne({ where: { uuid: uuid }});
+    }
+
+    /**
+    * Removes a contact by its UUID.
+    * @param uuid - The UUID of the contact to remove.
+    * @returns A promise that resolves to the removed contact.
+    */
+    async remove(uuid: UUID): Promise<Contact> {
+     const contactToRemove = await this.contactRepository.findOne({ where: { uuid: uuid }});
+     if (!contactToRemove) {
+      throw new Error('Contact not found');
+     }
+     return this.contactRepository.remove(contactToRemove);
+    }
+
+    /**
+    * Updates a contact by its UUID.
+    * @param uuid - The UUID of the contact to update.
+    * @param updateContactDTO - The data for updating the contact.
+    * @returns A promise that resolves to the updated contact.
+    */
+    async update(uuid: UUID, updateContactDTO: Partial<CreateContactDto>): Promise<Contact> {
+     const contactToUpdate = await this.contactRepository.findOne({ where: { uuid: uuid }});
+     if (!contactToUpdate) {
+      throw new Error('Contact not found');
+     }
+     Object.assign(contactToUpdate, updateContactDTO);
+     return this.contactRepository.save(contactToUpdate);
+    }
+
+    async addContactToCompany(uuid : UUID | null | undefined, contact : Contact) : Promise<Company> {
+      // Assign Company
+      if (uuid) {
+        const company = await this.companyService.findOne(uuid);
+        let contacts = company.contacts;
+
+        if(contacts){
+          contacts.push(contact)
+        }
+        else{
+          company.contacts = [contact]
+        }
+        
+        const updateCompanyDto = new UpdateCompanyDto();
+        updateCompanyDto.contacts = contacts.map((contact) => contact.uuid)
+
+        await this.companyService.update(company.uuid, updateCompanyDto);
+        return company;
+      }
+    }
+
 }

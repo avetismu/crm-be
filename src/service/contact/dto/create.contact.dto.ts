@@ -1,9 +1,9 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { Contact } from "../contact.entity";
+import { Contact } from "../entities/contact.entity";
 import { ContactMethod, ContactType, CountryCode, CountryPhoneAreaCode } from "src/utils/enum.utils";
 import { UUID } from "crypto";
 
-export class CreateContactDTO {
+export class CreateContactDto {
 
     @ApiProperty()
     first_name: string;
@@ -12,47 +12,48 @@ export class CreateContactDTO {
     last_name: string;
 
     @ApiProperty()
-    description: string;
+    description: string | null;
 
     @ApiProperty()
-    email: string;
+    email: string | null;
     
     @ApiProperty()
-    company: UUID;
-
-    @ApiProperty({enum: CountryCode})
-    country_phone_area_code: CountryCode;
-    
-    @ApiProperty()
-    phone_number: string;
+    company: UUID | null;
 
     @ApiProperty({enum: CountryCode})
-    whatsapp_country_phone_area_code: CountryCode;
+    country_phone_area_code: CountryCode | null;
+    
+    @ApiProperty()
+    phone_number: string | null;
+
+    @ApiProperty({enum: CountryCode})
+    whatsapp_country_phone_area_code: CountryCode | null;
 
     @ApiProperty()
-    whatsapp_number: string;
+    whatsapp_number: string | null;
 
     @ApiProperty()
-    wechat_id: string;
+    wechat_id: string | null;
     
     @ApiProperty()
-    address: string;
+    address: string | null;
     
     @ApiProperty()
-    city: string;
+    city: string | null;
     
     @ApiProperty()
-    province: string;
+    province: string | null;
     
     @ApiProperty({enum: CountryCode})
-    country: CountryCode;
+    country: CountryCode | null;
 
     @ApiProperty({enum: ContactType})
-    contact_type: ContactType;
+    contact_type: ContactType | null;
 
     @ApiProperty()
-    last_contact: Date;
+    last_contact: Date | null;
 
     @ApiProperty({enum: ContactMethod})
-    contact_method: ContactMethod;
+    contact_method: ContactMethod | null;
+
 }
