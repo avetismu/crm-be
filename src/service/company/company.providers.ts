@@ -1,5 +1,5 @@
 import { DataSource } from "typeorm";
-import { Company } from "./company.entity";
+import { Company } from "./entities/company.entity";
 
 export const CompanyProviders = [
     {

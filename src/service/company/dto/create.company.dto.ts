@@ -1,43 +1,57 @@
 import { ApiProperty } from "@nestjs/swagger";
+import { UUID } from "crypto";
 import { ContactMethod, ContactType, CountryCode } from "src/utils/enum.utils";
 
-export class CreateCompanyDTO {
-    @ApiProperty()
-    companyName: string;
+export class CreateCompanyDto {
+    @ApiProperty({nullable : false})
+    company_name: string;
 
-    @ApiProperty()
+    @ApiProperty({nullable : true})
     description: string;
 
-    @ApiProperty()
+    @ApiProperty({nullable : true})
     email: string;
 
-    @ApiProperty({ enum: CountryCode })
-    countryPhoneAreaCode: CountryCode;
+    @ApiProperty({ enum: CountryCode, nullable : true})
+    country_phone_area_code: CountryCode;
 
-    @ApiProperty()
-    phoneNumber: string;
+    @ApiProperty({nullable : true})
+    phone_number: string;
 
-    @ApiProperty({ enum: CountryCode })
-    whatsappCountryPhoneAreaCode: CountryCode;
+    @ApiProperty({ enum: CountryCode , nullable : true})
+    whatsapp_country_phone_area_code: CountryCode;
 
-    @ApiProperty()
-    whatsappNumber: string;
+    @ApiProperty({nullable : true})
+    whatsapp_number: string;
 
-    @ApiProperty()
-    wechatId: string;
+    @ApiProperty({nullable : true})
+    wechat_id: string;
 
-    @ApiProperty()
-    streetAddress: string;
+    @ApiProperty({nullable : true})
+    street_address: string;
 
-    @ApiProperty()
+    @ApiProperty({nullable : true})
     city: string;
 
-    @ApiProperty()
+    @ApiProperty({nullable : true})
     province: string;
 
-    @ApiProperty({ enum: CountryCode })
+    @ApiProperty({ enum: CountryCode, nullable : true})
     country: CountryCode;
 
-    @ApiProperty({ enum: ContactType })
-    contactType: ContactType;
+    @ApiProperty({ enum: ContactType, nullable : true })
+    contact_type: ContactType;
+
+    @ApiProperty({ nullable : true })
+    last_contact: Date; 
+
+    @ApiProperty({nullable : true})
+    contacts:UUID[];
+
+    @ApiProperty({nullable : true})
+    parent_entity: UUID;
+
+    @ApiProperty({nullable : true})
+    sub_entities: UUID[];
+
 }
