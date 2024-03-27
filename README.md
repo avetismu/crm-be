@@ -6,7 +6,7 @@ A General Purpose CRM Backend.
 
 ## Architecture
 
-
+![alt diagram](https://github.com/avetismu/crm-be/blob/main/crm-be%20diagram.png?raw=true)
 
 ## Installation
 
