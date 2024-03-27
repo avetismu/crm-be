@@ -2,7 +2,11 @@
 
 ## Description
 
-A General Purpose CRM Backend
+A General Purpose CRM Backend.
+
+## Architecture
+
+
 
 ## Installation
 
@@ -38,7 +42,7 @@ $ npm run test:cov
 
 ## Stay in touch
 
-- Author - [Avetis Muradyan](https://kamilmysliwiec.com)
+- Author - [Avetis Muradyan](https://www.linkedin.com/in/avetismu)
 
 ## License
 
