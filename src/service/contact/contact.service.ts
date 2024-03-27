@@ -1,5 +1,5 @@
 import { Injectable, Inject, forwardRef } from '@nestjs/common';
-import { FindOperator, Repository, Timestamp } from 'typeorm';
+import { FindOperator, ILike, Repository, Timestamp } from 'typeorm';
 import { Contact } from './entities/contact.entity';
 import { CreateContactDto } from './dto/create.contact.dto';
 import { UUID, randomUUID } from 'crypto';
@@ -7,6 +7,7 @@ import CompanyService from '../company/company.service';
 import { CreateCompanyDto } from '../company/dto/create.company.dto';
 import { Company } from '../company/entities/company.entity';
 import { UpdateCompanyDto } from '../company/dto/update.company.entity';
+import { UpdateContactDto } from './dto/update.contact.dto';
 @Injectable()
 /**
  * Service class for managing contacts.
@@ -25,6 +26,14 @@ export class ContactService {
    */
   async findAll(): Promise<Contact[]> {
     return this.contactRepository.find({relations: ['company']});
+  }
+
+
+  findByName(name: string): Promise<Contact[]> {
+    return this.contactRepository.find({ where: [
+      { firstName : ILike(`%${name}%`)},
+      { lastName : ILike(`%${name}%`)}
+    ]});
   }
 
   /**
@@ -54,8 +63,11 @@ export class ContactService {
       contact.contactMethod = createContactDTO.contact_method;
       contact.createdAt = new Date();
 
-      await this.addContactToCompany(createContactDTO.company, contact);
-      contact.company = await this.companyService.findOne(createContactDTO.company);
+      if(createContactDTO.company){
+        await this.addContactToCompany(createContactDTO.company, contact);
+        contact.company = await this.companyService.findOne(createContactDTO.company);
+      }
+      
 
       return await this.contactRepository.save(contact);
 
@@ -71,7 +83,7 @@ export class ContactService {
     * @returns A promise that resolves to the found contact, or undefined if not found.
     */
     async findOne(uuid: UUID): Promise<Contact | undefined> {
-     return this.contactRepository.findOne({ where: { uuid: uuid }});
+     return this.contactRepository.findOne({ where: { uuid: uuid }, relations: ['company']});
     }
 
     /**
@@ -93,13 +105,46 @@ export class ContactService {
     * @param updateContactDTO - The data for updating the contact.
     * @returns A promise that resolves to the updated contact.
     */
-    async update(uuid: UUID, updateContactDTO: Partial<CreateContactDto>): Promise<Contact> {
-     const contactToUpdate = await this.contactRepository.findOne({ where: { uuid: uuid }});
-     if (!contactToUpdate) {
-      throw new Error('Contact not found');
-     }
-     Object.assign(contactToUpdate, updateContactDTO);
-     return this.contactRepository.save(contactToUpdate);
+    async update(uuid: UUID, updateContactDTO: UpdateContactDto): Promise<Contact> {
+      console.log('updateContactDTO', updateContactDTO)
+      const contactToUpdate = await this.contactRepository.findOne({ where: { uuid: uuid }, relations : ['company']});
+      if (!contactToUpdate) {
+        throw new Error('Contact not found');
+      }
+
+      contactToUpdate.firstName = updateContactDTO.first_name ?? contactToUpdate.firstName;
+      contactToUpdate.lastName = updateContactDTO.last_name ?? contactToUpdate.lastName;
+      contactToUpdate.description = updateContactDTO.description ?? contactToUpdate.description;
+      contactToUpdate.email = updateContactDTO.email ?? contactToUpdate.email;
+      contactToUpdate.countryPhoneAreaCode = updateContactDTO.country_phone_area_code ?? contactToUpdate.countryPhoneAreaCode;
+      contactToUpdate.phoneNumber = updateContactDTO.phone_number ?? contactToUpdate.phoneNumber;
+      contactToUpdate.whatsappCountryPhoneAreaCode = updateContactDTO.whatsapp_country_phone_area_code ?? contactToUpdate.whatsappCountryPhoneAreaCode;
+      contactToUpdate.whatsappNumber = updateContactDTO.whatsapp_number ?? contactToUpdate.whatsappNumber;
+      contactToUpdate.wechatId = updateContactDTO.wechat_id ?? contactToUpdate.wechatId;
+      contactToUpdate.streetAddress = updateContactDTO.address ?? contactToUpdate.streetAddress;
+      contactToUpdate.city = updateContactDTO.city ?? contactToUpdate.city;
+      contactToUpdate.province = updateContactDTO.province ?? contactToUpdate.province;
+      contactToUpdate.country = updateContactDTO.country ?? contactToUpdate.country;
+      contactToUpdate.contactType = updateContactDTO.contact_type ?? contactToUpdate.contactType;
+      contactToUpdate.lastContact = updateContactDTO.last_contact ?? contactToUpdate.lastContact;
+      contactToUpdate.contactMethod = updateContactDTO.contact_method ?? contactToUpdate.contactMethod;
+
+      if (updateContactDTO.company){
+        await this.addContactToCompany(updateContactDTO.company, contactToUpdate);
+        contactToUpdate.company = await this.companyService.findOne(updateContactDTO.company);
+      }
+      else{
+        if(contactToUpdate.company)
+          this.removeContactFromCompany(contactToUpdate.company.uuid, contactToUpdate)  
+
+        contactToUpdate.company = null;
+      }
+      
+
+      contactToUpdate.updatedAt = new Date();
+
+      console.log('contactToUpdate', contactToUpdate)
+      return this.contactRepository.save(contactToUpdate);
     }
 
     async addContactToCompany(uuid : UUID | null | undefined, contact : Contact) : Promise<Company> {
@@ -113,6 +158,24 @@ export class ContactService {
         }
         else{
           company.contacts = [contact]
+        }
+        
+        const updateCompanyDto = new UpdateCompanyDto();
+        updateCompanyDto.contacts = contacts.map((contact) => contact.uuid)
+
+        await this.companyService.update(company.uuid, updateCompanyDto);
+        return company;
+      }
+    }
+
+    async removeContactFromCompany(uuid : UUID | null | undefined, contact : Contact) : Promise<Company> {
+      // Assign Company
+      if (uuid) {
+        const company = await this.companyService.findOne(uuid);
+        let contacts = company.contacts;
+        console.log('company', company)
+        if(contacts){
+          contacts.filter(item => item !== contact)
         }
         
         const updateCompanyDto = new UpdateCompanyDto();

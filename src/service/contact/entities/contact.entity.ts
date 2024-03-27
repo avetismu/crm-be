@@ -22,7 +22,7 @@ export class Contact {
     @JoinTable()
     company: Company;
 
-    @Column('text', {'name': 'email'})
+    @Column('text', {'name': 'email', nullable : true})
     email: string;
 
     @Column('enum', {'name': 'country_phone_area_code', 'enum': CountryCode, 'unique' : false, nullable : true})

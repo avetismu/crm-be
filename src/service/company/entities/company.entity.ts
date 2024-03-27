@@ -45,7 +45,7 @@ export class Company {
     @Column('enum', {'name': 'country', 'enum': CountryCode, nullable : true})
     country: CountryCode;  
 
-    @Column('enum', {'name': 'contact_type', 'enum': ContactType, 'default': ContactType.CUSTOMER})
+    @Column('enum', {'name': 'contact_type', 'enum': ContactType, 'default': ContactType.CUSTOMER, nullable : true})
     contactType: ContactType;
 
     @Column('timestamptz', {'name': 'last_contact', 'default': null, nullable : true})

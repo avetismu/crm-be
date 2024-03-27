@@ -5,7 +5,7 @@ import { Timestamp } from 'typeorm';
 import { UUID, randomUUID } from 'crypto';
 import { Contact } from '../contact/entities/contact.entity';
 import { ContactService } from '../contact/contact.service';
-import { updateContactDto } from '../contact/dto/update.contact.dto';
+import { UpdateContactDto } from '../contact/dto/update.contact.dto';
 import { UpdateCompanyDto } from './dto/update.company.entity';
 import { CreateCompanyDto } from './dto/create.company.dto';
 
@@ -64,7 +64,35 @@ export class CompanyService {
     if (!companyToUpdate) {
      throw new Error('Contact not found');
     }
-    Object.assign(companyToUpdate, updateCompanyDto);
+
+    if (updateCompanyDto.parent_entity){
+      await this.addCompanyToParentEntity(updateCompanyDto.parent_entity, companyToUpdate);
+      companyToUpdate.parentEntity = await this.companyRepository.findOne({where : { uuid : updateCompanyDto.parent_entity}, relations : ['parentEntity']});
+    }
+    else{
+      if(companyToUpdate.parentEntity)
+        await this.removeCompanyFromParentEntity(companyToUpdate.parentEntity.uuid, companyToUpdate);
+
+      companyToUpdate.parentEntity = null;
+    }
+    
+    companyToUpdate.companyName = updateCompanyDto.company_name ?? companyToUpdate.companyName;
+    companyToUpdate.description = updateCompanyDto.description ?? companyToUpdate.description;
+    companyToUpdate.email = updateCompanyDto.email ?? companyToUpdate.email;
+    companyToUpdate.countryPhoneAreaCode = updateCompanyDto.country_phone_area_code ?? companyToUpdate.countryPhoneAreaCode;
+    companyToUpdate.phoneNumber = updateCompanyDto.phone_number ?? companyToUpdate.phoneNumber;
+    companyToUpdate.whatsappCountryPhoneAreaCode = updateCompanyDto.whatsapp_country_phone_area_code ?? companyToUpdate.whatsappCountryPhoneAreaCode;
+    companyToUpdate.whatsappNumber = updateCompanyDto.whatsapp_number ?? companyToUpdate.whatsappNumber;
+    companyToUpdate.wechatId = updateCompanyDto.wechat_id ?? companyToUpdate.wechatId;
+    companyToUpdate.streetAddress = updateCompanyDto.street_address ?? companyToUpdate.streetAddress;
+    companyToUpdate.city = updateCompanyDto.city ?? companyToUpdate.city;
+    companyToUpdate.province = updateCompanyDto.province ?? companyToUpdate.province;
+    companyToUpdate.country = updateCompanyDto.country ?? companyToUpdate.country;
+    companyToUpdate.contactType = updateCompanyDto.contact_type ?? companyToUpdate.contactType;
+    companyToUpdate.lastContact = updateCompanyDto.last_contact ?? companyToUpdate.lastContact;
+    companyToUpdate.contactMethod = updateCompanyDto.contact_method ?? companyToUpdate.contactMethod;
+    companyToUpdate.updatedAt = new Date();
+
     return this.companyRepository.save(companyToUpdate);
    }
 
@@ -76,15 +104,43 @@ export class CompanyService {
     return this.companyRepository.remove(companyToRemove);
    }
 
+  /**
+   * Removes a company from all associated contacts.
+   * @param company - The company to be removed from contacts.
+   */
    async removeCompanyFromContacts(company : Company){
     company.contacts.map((contact) => {
-      const update = new updateContactDto();
+      const update = new UpdateContactDto();
       update.company = null
       this.companyRepository.update(contact.uuid, update)
     });
 
    }
 
+  /**
+   * Removes a company from its parent entity.
+   * @param uuid - The UUID of the parent entity.
+   * @param company - The company to be removed from the parent entity.
+   * @returns A promise that resolves to the updated company object.
+   */
+   async removeCompanyFromParentEntity(uuid : UUID | null | undefined, company : Company) : Promise<Company> {
+
+    const parentEntity = await this.companyRepository.findOne({where  : {uuid : uuid}, relations : ['subEntities']});
+
+    parentEntity.subEntities = parentEntity.subEntities.filter((subEntities) => subEntities.uuid !== company.uuid);
+
+    this.companyRepository.save(parentEntity);
+
+    return company
+   }
+
+  /**
+   * Adds a company to a parent entity.
+   * 
+   * @param uuid - The UUID of the parent entity.
+   * @param company - The company to be added.
+   * @returns A Promise that resolves to the updated parent entity.
+   */
    async addCompanyToParentEntity(uuid : UUID | null | undefined, company : Company) : Promise<Company> {
     // Assign Company
     if (uuid) {

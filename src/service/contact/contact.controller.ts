@@ -3,7 +3,7 @@ import { ContactService } from './contact.service';
 import { Contact } from './entities/contact.entity';
 import { API_VERSION } from 'src/utils/app.constants.utils';
 import { CreateContactDto } from './dto/create.contact.dto';
-import { updateContactDto } from './dto/update.contact.dto';
+import { UpdateContactDto } from './dto/update.contact.dto';
 import { UUID } from "crypto";
 
 const CONTACTS_PATH = 'contacts';
@@ -22,13 +22,18 @@ export class ContactsController {
     return this.contactService.findAll();
   }
 
+  @Get('by_name/:name')
+    getByName(@Param('name') name: string): Promise<Contact[]> {
+        return this.contactService.findByName(name);
+    }
+
   @Get(':uuid')
   findOne(@Param('uuid') uuid: UUID) {
     return this.contactService.findOne(uuid);
   }
 
   @Patch(':uuid')
-  update(@Param('uuid') uuid: UUID, @Body() updateContactDTO: updateContactDto) {
+  update(@Param('uuid') uuid: UUID, @Body() updateContactDTO: UpdateContactDto) {
     return this.contactService.update(uuid, updateContactDTO);
   }
 
